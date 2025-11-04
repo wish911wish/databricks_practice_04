@@ -88,23 +88,30 @@ df.orderBy("prefecture_name", "year").show()
 # MAGIC %md
 # MAGIC ## 4. Delta Tableへの保存
 # MAGIC
-# MAGIC Databricksでは、Delta Lake形式でのデータ保存が推奨されます。
+# MAGIC Databricksでは、Unity Catalogを使用したデータ管理が推奨されます。
+# MAGIC Unity Catalogを使用することで、カタログ、スキーマ、テーブルの3層構造で
+# MAGIC データを管理できます。
 
 # COMMAND ----------
 
-# Delta Tableとして保存するパス
-# 開発環境では通常、Workspace内のパスを使用します
+# Unity Catalogのカタログとスキーマを設定
+# 注: 事前にカタログとスキーマを作成しておく必要があります
+# デフォルトのカタログ名を使用（環境に応じて変更してください）
+catalog_name = "default"  # または使用しているカタログ名
+schema_name = "default"  # または使用しているスキーマ名
 table_name = "population_statistics"
-save_path = f"/tmp/delta/{table_name}"
 
-# Delta形式で保存
+# 完全修飾テーブル名
+full_table_name = f"{catalog_name}.{schema_name}.{table_name}"
+
+# Unity Catalogの管理テーブルとして保存
 df.write \
     .format("delta") \
     .mode("overwrite") \
     .option("overwriteSchema", "true") \
-    .save(save_path)
+    .saveAsTable(full_table_name)
 
-print(f"データを {save_path} に保存しました")
+print(f"データを {full_table_name} に保存しました")
 
 # COMMAND ----------
 
@@ -113,8 +120,8 @@ print(f"データを {save_path} に保存しました")
 
 # COMMAND ----------
 
-# Delta Tableから読み込み
-df_loaded = spark.read.format("delta").load(save_path)
+# Unity Catalogのテーブルから読み込み
+df_loaded = spark.read.table(full_table_name)
 
 print("読み込んだデータの件数:", df_loaded.count())
 df_loaded.show()
